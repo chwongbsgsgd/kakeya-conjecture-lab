@@ -772,15 +772,17 @@ noiseSlider.addEventListener('input', (e) => {
 });
 
 function generateAndDrawStructure(ctx, type, width, height, noise) {
-  const imageData = ctx.createImageData(width, height);
-  const pixels = imageData.data;
+  // 使用较低分辨率生成数据，然后通过填充矩形绘制
+  const step = 2; // 每个数据点对应 2x2 像素
+  const smallWidth = Math.ceil(width / step);
+  const smallHeight = Math.ceil(height / step);
   const data = [];
   
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
+  for (let y = 0; y < smallHeight; y++) {
+    for (let x = 0; x < smallWidth; x++) {
       let value = 0;
-      const nx = (x / width - 0.5) * 2;
-      const ny = (y / height - 0.5) * 2;
+      const nx = (x / smallWidth - 0.5) * 2;
+      const ny = (y / smallHeight - 0.5) * 2;
       
       switch (type) {
         case 'true3d':
@@ -809,18 +811,20 @@ function generateAndDrawStructure(ctx, type, width, height, noise) {
       value += (Math.random() - 0.5) * noise * 2;
       const normalizedValue = Math.max(0, Math.min(1, (value + 2) / 4));
       data.push(normalizedValue);
-      
-      const val = Math.floor(normalizedValue * 255);
-      const idx = (y * width + x) * 4;
-      pixels[idx] = val;
-      pixels[idx + 1] = Math.floor(val * 0.7);
-      pixels[idx + 2] = Math.floor(val * 1.3);
-      pixels[idx + 3] = 255;
     }
   }
   
-  ctx.putImageData(imageData, 0, 0);
-  return data;
+  // 使用填充矩形绘制
+  for (let y = 0; y < smallHeight; y++) {
+    for (let x = 0; x < smallWidth; x++) {
+      const idx = y * smallWidth + x;
+      const val = Math.floor(data[idx] * 255);
+      ctx.fillStyle = `rgb(${val}, ${Math.floor(val * 0.7)}, ${Math.floor(val * 1.3)})`;
+      ctx.fillRect(x * step, y * step, step, step);
+    }
+  }
+  
+  return { data, width: smallWidth, height: smallHeight };
 }
 
 function estimateKakeyaDimension(data, width, height) {
@@ -856,9 +860,12 @@ function drawDimensionExperiment() {
   dimensionCtx.fillStyle = '#1e293b';
   dimensionCtx.fillRect(0, 0, width, height);
   
-  const data = generateAndDrawStructure(dimensionCtx, structureType, width, height, noiseLevel);
+  const result = generateAndDrawStructure(dimensionCtx, structureType, width, height, noiseLevel);
+  const data = result.data;
+  const smallWidth = result.width;
+  const smallHeight = result.height;
   
-  const result = estimateKakeyaDimension(data, width, height);
+  const dimResult = estimateKakeyaDimension(data, smallWidth, smallHeight);
   
   const kakeyaDimEl = document.getElementById('kakeyaDim');
   const energyImbalanceEl = document.getElementById('energyImbalance');
@@ -866,11 +873,11 @@ function drawDimensionExperiment() {
   const energyYEl = document.getElementById('energyY');
   const energyZEl = document.getElementById('energyZ');
   
-  if (kakeyaDimEl) kakeyaDimEl.textContent = result.kakeyaDim.toFixed(2);
-  if (energyImbalanceEl) energyImbalanceEl.textContent = result.imbalance.toFixed(3);
-  if (energyXEl) energyXEl.textContent = (result.normalized[0] * 100).toFixed(1) + '%';
-  if (energyYEl) energyYEl.textContent = (result.normalized[1] * 100).toFixed(1) + '%';
-  if (energyZEl) energyZEl.textContent = (result.normalized[2] * 100).toFixed(1) + '%';
+  if (kakeyaDimEl) kakeyaDimEl.textContent = dimResult.kakeyaDim.toFixed(2);
+  if (energyImbalanceEl) energyImbalanceEl.textContent = dimResult.imbalance.toFixed(3);
+  if (energyXEl) energyXEl.textContent = (dimResult.normalized[0] * 100).toFixed(1) + '%';
+  if (energyYEl) energyYEl.textContent = (dimResult.normalized[1] * 100).toFixed(1) + '%';
+  if (energyZEl) energyZEl.textContent = (dimResult.normalized[2] * 100).toFixed(1) + '%';
 }
 
 // 多尺度颗粒化采样实验
