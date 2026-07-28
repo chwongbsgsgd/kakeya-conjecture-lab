@@ -1073,7 +1073,6 @@ function drawWaveOnImageData(imageData, x, y, sigma, angle, width, height, mode)
       const rotY = -dx * sinA + dy * cosA;
       
       const expVal = Math.exp(-(rotX * rotX) / (2 * sigma2) - (rotY * rotY) / (2 * smallSigma2));
-      if (expVal < 0.001) continue;
       
       energySum += expVal;
       const idx = (py * width + px) * 4;
@@ -1103,6 +1102,7 @@ function drawWaveExperiment() {
   const height = waveCanvas.height || 300;
   if (width < 10 || height < 10) return;
   
+  // 清除背景
   waveCtx.fillStyle = '#1e293b';
   waveCtx.fillRect(0, 0, width, height);
   
@@ -1114,33 +1114,61 @@ function drawWaveExperiment() {
   const directionCounts = new Array(waveDirections).fill(0);
   
   if (waveMode === 'sum') {
-    const imageData = waveCtx.createImageData(width, height);
-    
     const effectiveScales = Math.min(waveScales, 4);
     const effectiveDirections = Math.min(waveDirections, 8);
     
+    // 直接用 canvas 绘制多个高斯波包
     for (let scale = 0; scale < effectiveScales; scale++) {
       const sigma = Math.max(5, 30 / Math.pow(2, scale));
       
       for (let dir = 0; dir < effectiveDirections; dir++) {
         const angle = (dir / effectiveDirections) * Math.PI * 2;
-        const energy = drawWaveOnImageData(imageData, centerX, centerY, sigma, angle, width, height, 'sum');
-        totalEnergy += energy;
-        if (scale >= effectiveScales - 2) highFreqEnergy += energy;
-        directionCounts[dir] += energy;
+        
+        // 在方向上绘制线条，模拟波包
+        const len = sigma * 3;
+        const x1 = centerX - Math.cos(angle) * len;
+        const y1 = centerY - Math.sin(angle) * len;
+        const x2 = centerX + Math.cos(angle) * len;
+        const y2 = centerY + Math.sin(angle) * len;
+        
+        // 使用简单颜色绘制线条
+        const hue = (dir / effectiveDirections) * 360;
+        waveCtx.beginPath();
+        waveCtx.moveTo(x1, y1);
+        waveCtx.lineTo(x2, y2);
+        waveCtx.strokeStyle = `hsl(${hue}, 70%, ${40 + scale * 10}%)`;
+        waveCtx.lineWidth = sigma / 3;
+        waveCtx.lineCap = 'round';
+        waveCtx.globalAlpha = 0.6;
+        waveCtx.stroke();
+        waveCtx.globalAlpha = 1.0;
+        
+        totalEnergy += 1 / (scale + 1);
+        if (scale >= effectiveScales - 2) highFreqEnergy += 1 / (scale + 1);
+        directionCounts[dir] += 1 / (scale + 1);
       }
     }
-    
-    waveCtx.putImageData(imageData, 0, 0);
   } else if (waveMode === 'individual') {
     const scaleIdx = Math.floor(currentWavePacket / waveDirections) % Math.min(waveScales, 4);
     const dirIdx = currentWavePacket % waveDirections;
     const sigma = Math.max(5, 30 / Math.pow(2, scaleIdx));
     const angle = (dirIdx / waveDirections) * Math.PI * 2;
     
-    const imageData = waveCtx.createImageData(width, height);
-    drawWaveOnImageData(imageData, centerX, centerY, sigma, angle, width, height, 'single');
-    waveCtx.putImageData(imageData, 0, 0);
+    // 绘制单个波包
+    const len = sigma * 3;
+    const x1 = centerX - Math.cos(angle) * len;
+    const y1 = centerY - Math.sin(angle) * len;
+    const x2 = centerX + Math.cos(angle) * len;
+    const y2 = centerY + Math.sin(angle) * len;
+    
+    const hue = (dirIdx / waveDirections) * 360;
+    waveCtx.beginPath();
+    waveCtx.moveTo(x1, y1);
+    waveCtx.lineTo(x2, y2);
+    waveCtx.strokeStyle = `hsl(${hue}, 80%, 60%)`;
+    waveCtx.lineWidth = sigma / 2;
+    waveCtx.lineCap = 'round';
+    waveCtx.stroke();
     
     waveCtx.fillStyle = '#fff';
     waveCtx.font = '14px sans-serif';
@@ -1161,6 +1189,7 @@ function drawWaveExperiment() {
     }
   }
   
+  // 更新统计信息
   const maxDir = directionCounts.length > 0 ? Math.max(...directionCounts) : 0;
   const minDir = directionCounts.length > 0 ? Math.min(...directionCounts) : 0;
   const uniformity = maxDir > 0 ? ((1 - (maxDir - minDir) / maxDir) * 100).toFixed(1) : '0.0';
