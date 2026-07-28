@@ -1121,12 +1121,13 @@ function drawWaveExperiment() {
   const directionCounts = new Array(waveDirections).fill(0);
   
   if (waveMode === 'sum') {
-    const effectiveScales = Math.min(waveScales, 4);
-    const effectiveDirections = Math.min(waveDirections, 8);
+    // 使用实际的尺度和方向数量
+    const effectiveScales = waveScales;
+    const effectiveDirections = waveDirections;
     
     // 直接用 canvas 绘制多个高斯波包
     for (let scale = 0; scale < effectiveScales; scale++) {
-      const sigma = Math.max(5, 30 / Math.pow(2, scale));
+      const sigma = Math.max(3, 35 / Math.pow(1.5, scale));
       
       for (let dir = 0; dir < effectiveDirections; dir++) {
         const angle = (dir / effectiveDirections) * Math.PI * 2;
@@ -1143,10 +1144,10 @@ function drawWaveExperiment() {
         waveCtx.beginPath();
         waveCtx.moveTo(x1, y1);
         waveCtx.lineTo(x2, y2);
-        waveCtx.strokeStyle = `hsl(${hue}, 70%, ${40 + scale * 10}%)`;
+        waveCtx.strokeStyle = `hsl(${hue}, 70%, ${40 + scale * 8}%)`;
         waveCtx.lineWidth = sigma / 3;
         waveCtx.lineCap = 'round';
-        waveCtx.globalAlpha = 0.6;
+        waveCtx.globalAlpha = 0.5;
         waveCtx.stroke();
         waveCtx.globalAlpha = 1.0;
         
@@ -1156,9 +1157,9 @@ function drawWaveExperiment() {
       }
     }
   } else if (waveMode === 'individual') {
-    const scaleIdx = Math.floor(currentWavePacket / waveDirections) % Math.min(waveScales, 4);
+    const scaleIdx = Math.floor(currentWavePacket / waveDirections) % waveScales;
     const dirIdx = currentWavePacket % waveDirections;
-    const sigma = Math.max(5, 30 / Math.pow(2, scaleIdx));
+    const sigma = Math.max(3, 35 / Math.pow(1.5, scaleIdx));
     const angle = (dirIdx / waveDirections) * Math.PI * 2;
     
     // 绘制单个波包
@@ -1190,7 +1191,7 @@ function drawWaveExperiment() {
         const barHeight = energy * height * 0.8;
         
         const hue = (dir / waveDirections) * 360;
-        waveCtx.fillStyle = `hsl(${hue}, 70%, ${40 + scale * 10}%)`;
+        waveCtx.fillStyle = `hsl(${hue}, 70%, ${40 + scale * 8}%)`;
         waveCtx.fillRect(index * barWidth, height - barHeight, Math.max(1, barWidth - 2), barHeight);
       }
     }
