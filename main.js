@@ -33,63 +33,70 @@ function navigateTo(sectionId) {
     stopWaveAnimation();
   }
   
-  // 延迟初始化或重新绘制对应section的canvas
-  setTimeout(() => {
-    switch(sectionId) {
-      case 'experiment-2d':
-        if (!initializedCanvases.has('canvas2d')) {
-          initCanvas2d();
-          initializedCanvases.add('canvas2d');
-        } else if (canvas2d) {
-          canvas2d.width = canvas2d.offsetWidth || 400;
-          canvas2d.height = canvas2d.offsetHeight || 300;
-          draw2dExperiment();
-        }
-        break;
-      case 'definition':
-        if (!initializedCanvases.has('deltaCanvas')) {
-          initDeltaCanvas();
-          initializedCanvases.add('deltaCanvas');
-        } else if (deltaCanvas) {
-          deltaCanvas.width = deltaCanvas.offsetWidth || 400;
-          deltaCanvas.height = deltaCanvas.offsetHeight || 300;
-          drawDeltaExperiment();
-        }
-        break;
-      case 'dimension':
-        if (!initializedCanvases.has('dimensionCanvas')) {
-          initDimensionCanvas();
-          initializedCanvases.add('dimensionCanvas');
-        } else if (dimensionCanvas) {
-          dimensionCanvas.width = dimensionCanvas.offsetWidth || 400;
-          dimensionCanvas.height = dimensionCanvas.offsetHeight || 300;
-          drawDimensionExperiment();
-        }
-        break;
-      case 'multi-scale':
-        if (!initializedCanvases.has('scaleCanvas')) {
-          initScaleCanvas();
-          initializedCanvases.add('scaleCanvas');
-        } else if (scaleCanvas) {
-          scaleCanvas.width = scaleCanvas.offsetWidth || 400;
-          scaleCanvas.height = scaleCanvas.offsetHeight || 300;
-          drawScaleExperiment();
-        }
-        break;
-      case 'wave-packet':
-        if (!initializedCanvases.has('waveCanvas')) {
-          initWaveCanvas();
-          initializedCanvases.add('waveCanvas');
-        } else if (waveCanvas) {
-          waveCanvas.width = waveCanvas.offsetWidth || 400;
-          waveCanvas.height = waveCanvas.offsetHeight || 300;
-          drawWaveExperiment();
-        }
-        // 启动波包动画
-        startWaveAnimation();
-        break;
-    }
-  }, 100);
+  // 使用 requestAnimationFrame 确保 DOM 已经渲染
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      switch(sectionId) {
+        case 'experiment-2d':
+          if (!initializedCanvases.has('canvas2d')) {
+            initCanvas2d();
+            initializedCanvases.add('canvas2d');
+          } else if (canvas2d) {
+            const rect = canvas2d.getBoundingClientRect();
+            canvas2d.width = rect.width > 10 ? rect.width : 400;
+            canvas2d.height = rect.height > 10 ? rect.height : 300;
+            draw2dExperiment();
+          }
+          break;
+        case 'definition':
+          if (!initializedCanvases.has('deltaCanvas')) {
+            initDeltaCanvas();
+            initializedCanvases.add('deltaCanvas');
+          } else if (deltaCanvas) {
+            const rect = deltaCanvas.getBoundingClientRect();
+            deltaCanvas.width = rect.width > 10 ? rect.width : 400;
+            deltaCanvas.height = rect.height > 10 ? rect.height : 300;
+            drawDeltaExperiment();
+          }
+          break;
+        case 'dimension':
+          if (!initializedCanvases.has('dimensionCanvas')) {
+            initDimensionCanvas();
+            initializedCanvases.add('dimensionCanvas');
+          } else if (dimensionCanvas) {
+            const rect = dimensionCanvas.getBoundingClientRect();
+            dimensionCanvas.width = rect.width > 10 ? rect.width : 400;
+            dimensionCanvas.height = rect.height > 10 ? rect.height : 300;
+            drawDimensionExperiment();
+          }
+          break;
+        case 'multi-scale':
+          if (!initializedCanvases.has('scaleCanvas')) {
+            initScaleCanvas();
+            initializedCanvases.add('scaleCanvas');
+          } else if (scaleCanvas) {
+            const rect = scaleCanvas.getBoundingClientRect();
+            scaleCanvas.width = rect.width > 10 ? rect.width : 400;
+            scaleCanvas.height = rect.height > 10 ? rect.height : 300;
+            drawScaleExperiment();
+          }
+          break;
+        case 'wave-packet':
+          if (!initializedCanvases.has('waveCanvas')) {
+            initWaveCanvas();
+            initializedCanvases.add('waveCanvas');
+          } else if (waveCanvas) {
+            const rect = waveCanvas.getBoundingClientRect();
+            waveCanvas.width = rect.width > 10 ? rect.width : 400;
+            waveCanvas.height = rect.height > 10 ? rect.height : 300;
+            drawWaveExperiment();
+          }
+          // 启动波包动画
+          startWaveAnimation();
+          break;
+      }
+    });
+  });
 }
 
 // 三维可视化
@@ -481,19 +488,20 @@ function initCanvas2d() {
   if (!canvas2d) return;
   
   ctx2d = canvas2d.getContext('2d');
-  // 使用 offsetWidth，如果为 0 则使用默认值
-  const w = canvas2d.offsetWidth || 400;
-  const h = canvas2d.offsetHeight || 300;
+  const rect = canvas2d.getBoundingClientRect();
+  const w = rect.width > 10 ? rect.width : 400;
+  const h = rect.height > 10 ? rect.height : 300;
   canvas2d.width = w;
   canvas2d.height = h;
   
   draw2dExperiment();
   
   window.addEventListener('resize', () => {
-    const w = canvas2d.offsetWidth || 400;
-    const h = canvas2d.offsetHeight || 300;
-    canvas2d.width = w;
-    canvas2d.height = h;
+    const r = canvas2d.getBoundingClientRect();
+    const ww = r.width > 10 ? r.width : 400;
+    const hh = r.height > 10 ? r.height : 300;
+    canvas2d.width = ww;
+    canvas2d.height = hh;
     draw2dExperiment();
   });
 }
@@ -628,18 +636,20 @@ function initDeltaCanvas() {
   if (!deltaCanvas) return;
   
   deltaCtx = deltaCanvas.getContext('2d');
-  const w = deltaCanvas.offsetWidth || 400;
-  const h = deltaCanvas.offsetHeight || 300;
+  const rect = deltaCanvas.getBoundingClientRect();
+  const w = rect.width > 10 ? rect.width : 400;
+  const h = rect.height > 10 ? rect.height : 300;
   deltaCanvas.width = w;
   deltaCanvas.height = h;
   
   drawDeltaExperiment();
   
   window.addEventListener('resize', () => {
-    const w = deltaCanvas.offsetWidth || 400;
-    const h = deltaCanvas.offsetHeight || 300;
-    deltaCanvas.width = w;
-    deltaCanvas.height = h;
+    const r = deltaCanvas.getBoundingClientRect();
+    const ww = r.width > 10 ? r.width : 400;
+    const hh = r.height > 10 ? r.height : 300;
+    deltaCanvas.width = ww;
+    deltaCanvas.height = hh;
     drawDeltaExperiment();
   });
 }
@@ -728,18 +738,20 @@ function initDimensionCanvas() {
   if (!dimensionCanvas) return;
   
   dimensionCtx = dimensionCanvas.getContext('2d');
-  const w = dimensionCanvas.offsetWidth || 400;
-  const h = dimensionCanvas.offsetHeight || 300;
+  const rect = dimensionCanvas.getBoundingClientRect();
+  const w = rect.width > 10 ? rect.width : 400;
+  const h = rect.height > 10 ? rect.height : 300;
   dimensionCanvas.width = w;
   dimensionCanvas.height = h;
   
   drawDimensionExperiment();
   
   window.addEventListener('resize', () => {
-    const w = dimensionCanvas.offsetWidth || 400;
-    const h = dimensionCanvas.offsetHeight || 300;
-    dimensionCanvas.width = w;
-    dimensionCanvas.height = h;
+    const r = dimensionCanvas.getBoundingClientRect();
+    const ww = r.width > 10 ? r.width : 400;
+    const hh = r.height > 10 ? r.height : 300;
+    dimensionCanvas.width = ww;
+    dimensionCanvas.height = hh;
     drawDimensionExperiment();
   });
 }
@@ -759,8 +771,11 @@ noiseSlider.addEventListener('input', (e) => {
   drawDimensionExperiment();
 });
 
-function generateStructure(type, width, height, noise) {
+function generateAndDrawStructure(ctx, type, width, height, noise) {
+  const imageData = ctx.createImageData(width, height);
+  const pixels = imageData.data;
   const data = [];
+  
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       let value = 0;
@@ -779,22 +794,32 @@ function generateStructure(type, width, height, noise) {
           value = Math.exp(-nx * nx * 30) * Math.exp(-ny * ny * 30) * 5;
           break;
         case 'kakeya':
-          for (let i = 0; i < 30; i++) {
-            const angle = (i / 30) * Math.PI * 2;
+          for (let i = 0; i < 12; i++) {
+            const angle = (i / 12) * Math.PI * 2;
             const cx = Math.cos(angle) * 0.3;
             const cy = Math.sin(angle) * 0.3;
             const dist = Math.abs((nx - cx) * Math.cos(angle) + (ny - cy) * Math.sin(angle));
-            if (dist < 0.05) {
-              value += Math.exp(-dist * 50);
+            if (dist < 0.08) {
+              value += Math.exp(-dist * 30);
             }
           }
           break;
       }
       
       value += (Math.random() - 0.5) * noise * 2;
-      data.push(Math.max(0, Math.min(1, (value + 2) / 4)));
+      const normalizedValue = Math.max(0, Math.min(1, (value + 2) / 4));
+      data.push(normalizedValue);
+      
+      const val = Math.floor(normalizedValue * 255);
+      const idx = (y * width + x) * 4;
+      pixels[idx] = val;
+      pixels[idx + 1] = Math.floor(val * 0.7);
+      pixels[idx + 2] = Math.floor(val * 1.3);
+      pixels[idx + 3] = 255;
     }
   }
+  
+  ctx.putImageData(imageData, 0, 0);
   return data;
 }
 
@@ -831,28 +856,21 @@ function drawDimensionExperiment() {
   dimensionCtx.fillStyle = '#1e293b';
   dimensionCtx.fillRect(0, 0, width, height);
   
-  const data = generateStructure(structureType, width, height, noiseLevel);
-  
-  const imageData = dimensionCtx.createImageData(width, height);
-  const pixels = imageData.data;
-  
-  for (let i = 0; i < data.length; i++) {
-    const val = Math.floor(data[i] * 255);
-    pixels[i * 4] = val;
-    pixels[i * 4 + 1] = Math.floor(val * 0.7);
-    pixels[i * 4 + 2] = Math.floor(val * 1.3);
-    pixels[i * 4 + 3] = 255;
-  }
-  
-  dimensionCtx.putImageData(imageData, 0, 0);
+  const data = generateAndDrawStructure(dimensionCtx, structureType, width, height, noiseLevel);
   
   const result = estimateKakeyaDimension(data, width, height);
   
-  document.getElementById('kakeyaDim').textContent = result.kakeyaDim.toFixed(2);
-  document.getElementById('energyImbalance').textContent = result.imbalance.toFixed(3);
-  document.getElementById('energyX').textContent = (result.normalized[0] * 100).toFixed(1) + '%';
-  document.getElementById('energyY').textContent = (result.normalized[1] * 100).toFixed(1) + '%';
-  document.getElementById('energyZ').textContent = (result.normalized[2] * 100).toFixed(1) + '%';
+  const kakeyaDimEl = document.getElementById('kakeyaDim');
+  const energyImbalanceEl = document.getElementById('energyImbalance');
+  const energyXEl = document.getElementById('energyX');
+  const energyYEl = document.getElementById('energyY');
+  const energyZEl = document.getElementById('energyZ');
+  
+  if (kakeyaDimEl) kakeyaDimEl.textContent = result.kakeyaDim.toFixed(2);
+  if (energyImbalanceEl) energyImbalanceEl.textContent = result.imbalance.toFixed(3);
+  if (energyXEl) energyXEl.textContent = (result.normalized[0] * 100).toFixed(1) + '%';
+  if (energyYEl) energyYEl.textContent = (result.normalized[1] * 100).toFixed(1) + '%';
+  if (energyZEl) energyZEl.textContent = (result.normalized[2] * 100).toFixed(1) + '%';
 }
 
 // 多尺度颗粒化采样实验
@@ -866,18 +884,20 @@ function initScaleCanvas() {
   if (!scaleCanvas) return;
   
   scaleCtx = scaleCanvas.getContext('2d');
-  const w = scaleCanvas.offsetWidth || 400;
-  const h = scaleCanvas.offsetHeight || 300;
+  const rect = scaleCanvas.getBoundingClientRect();
+  const w = rect.width > 10 ? rect.width : 400;
+  const h = rect.height > 10 ? rect.height : 300;
   scaleCanvas.width = w;
   scaleCanvas.height = h;
   
   drawScaleExperiment();
   
   window.addEventListener('resize', () => {
-    const w = scaleCanvas.offsetWidth || 400;
-    const h = scaleCanvas.offsetHeight || 300;
-    scaleCanvas.width = w;
-    scaleCanvas.height = h;
+    const r = scaleCanvas.getBoundingClientRect();
+    const ww = r.width > 10 ? r.width : 400;
+    const hh = r.height > 10 ? r.height : 300;
+    scaleCanvas.width = ww;
+    scaleCanvas.height = hh;
     drawScaleExperiment();
   });
 }
@@ -988,18 +1008,20 @@ function initWaveCanvas() {
   if (!waveCanvas) return;
   
   waveCtx = waveCanvas.getContext('2d');
-  const w = waveCanvas.offsetWidth || 400;
-  const h = waveCanvas.offsetHeight || 300;
+  const rect = waveCanvas.getBoundingClientRect();
+  const w = rect.width > 10 ? rect.width : 400;
+  const h = rect.height > 10 ? rect.height : 300;
   waveCanvas.width = w;
   waveCanvas.height = h;
   
   drawWaveExperiment();
   
   window.addEventListener('resize', () => {
-    const w = waveCanvas.offsetWidth || 400;
-    const h = waveCanvas.offsetHeight || 300;
-    waveCanvas.width = w;
-    waveCanvas.height = h;
+    const r = waveCanvas.getBoundingClientRect();
+    const ww = r.width > 10 ? r.width : 400;
+    const hh = r.height > 10 ? r.height : 300;
+    waveCanvas.width = ww;
+    waveCanvas.height = hh;
     drawWaveExperiment();
   });
 }
@@ -1027,26 +1049,21 @@ waveModeSelect.addEventListener('change', (e) => {
   drawWaveExperiment();
 });
 
-function createWavePacket(x, y, sigma, angle, width, height) {
-  // 优化：只在波包影响范围内计算
-  const sigmaPixels = sigma;
-  const range = Math.ceil(sigmaPixels * 3); // 3倍sigma范围
+function drawWaveOnImageData(imageData, x, y, sigma, angle, width, height, mode) {
+  const pixels = imageData.data;
+  const range = Math.ceil(sigma * 3);
   const cosA = Math.cos(angle);
   const sinA = Math.sin(angle);
+  const sigma2 = sigma * sigma;
+  const smallSigma2 = (sigma / 3) * (sigma / 3);
   
-  const packet = [];
   const startX = Math.max(0, Math.floor(x - range));
   const endX = Math.min(width, Math.ceil(x + range));
   const startY = Math.max(0, Math.floor(y - range));
   const endY = Math.min(height, Math.ceil(y + range));
   
-  for (let py = 0; py < height; py++) {
-    for (let px = 0; px < width; px++) {
-      packet.push(0); // 默认值为0
-    }
-  }
+  let energySum = 0;
   
-  // 只在有效范围内计算
   for (let py = startY; py < endY; py++) {
     for (let px = startX; px < endX; px++) {
       const dx = px - x;
@@ -1055,11 +1072,28 @@ function createWavePacket(x, y, sigma, angle, width, height) {
       const rotX = dx * cosA + dy * sinA;
       const rotY = -dx * sinA + dy * cosA;
       
-      const value = Math.exp(-(rotX * rotX) / (2 * sigma * sigma) - (rotY * rotY) / (2 * (sigma / 3) * (sigma / 3)));
-      packet[py * width + px] = value;
+      const expVal = Math.exp(-(rotX * rotX) / (2 * sigma2) - (rotY * rotY) / (2 * smallSigma2));
+      if (expVal < 0.001) continue;
+      
+      energySum += expVal;
+      const idx = (py * width + px) * 4;
+      
+      if (mode === 'sum') {
+        pixels[idx] = Math.min(255, pixels[idx] + Math.floor(expVal * 200));
+        pixels[idx + 1] = Math.min(255, pixels[idx + 1] + Math.floor(expVal * 150));
+        pixels[idx + 2] = Math.min(255, pixels[idx + 2] + Math.floor(expVal * 255));
+        pixels[idx + 3] = 255;
+      } else {
+        const val = Math.floor(expVal * 255);
+        pixels[idx] = val;
+        pixels[idx + 1] = Math.floor(val * 0.7);
+        pixels[idx + 2] = Math.floor(val * 1.3);
+        pixels[idx + 3] = 255;
+      }
     }
   }
-  return packet;
+  
+  return energySum;
 }
 
 function drawWaveExperiment() {
@@ -1081,10 +1115,8 @@ function drawWaveExperiment() {
   
   if (waveMode === 'sum') {
     const imageData = waveCtx.createImageData(width, height);
-    const pixels = imageData.data;
     
-    // 限制计算量，使用更小的sigma值
-    const effectiveScales = Math.min(waveScales, 3);
+    const effectiveScales = Math.min(waveScales, 4);
     const effectiveDirections = Math.min(waveDirections, 8);
     
     for (let scale = 0; scale < effectiveScales; scale++) {
@@ -1092,49 +1124,29 @@ function drawWaveExperiment() {
       
       for (let dir = 0; dir < effectiveDirections; dir++) {
         const angle = (dir / effectiveDirections) * Math.PI * 2;
-        const packet = createWavePacket(centerX, centerY, sigma, angle, width, height);
-        
-        for (let i = 0; i < packet.length; i++) {
-          const energy = packet[i];
-          if (energy > 0.001) { // 只处理有能量的像素
-            totalEnergy += energy;
-            if (scale >= effectiveScales - 2) highFreqEnergy += energy;
-            directionCounts[dir] += energy;
-            
-            pixels[i * 4] = Math.min(255, pixels[i * 4] + Math.floor(energy * 200));
-            pixels[i * 4 + 1] = Math.min(255, pixels[i * 4 + 1] + Math.floor(energy * 150));
-            pixels[i * 4 + 2] = Math.min(255, pixels[i * 4 + 2] + Math.floor(energy * 255));
-          }
-        }
+        const energy = drawWaveOnImageData(imageData, centerX, centerY, sigma, angle, width, height, 'sum');
+        totalEnergy += energy;
+        if (scale >= effectiveScales - 2) highFreqEnergy += energy;
+        directionCounts[dir] += energy;
       }
     }
     
     waveCtx.putImageData(imageData, 0, 0);
   } else if (waveMode === 'individual') {
-    const sigma = Math.max(5, 30 / Math.pow(2, Math.floor(currentWavePacket / waveDirections) % Math.min(waveScales, 3)));
-    const angle = ((currentWavePacket % waveDirections) / waveDirections) * Math.PI * 2;
-    const packet = createWavePacket(centerX, centerY, sigma, angle, width, height);
+    const scaleIdx = Math.floor(currentWavePacket / waveDirections) % Math.min(waveScales, 4);
+    const dirIdx = currentWavePacket % waveDirections;
+    const sigma = Math.max(5, 30 / Math.pow(2, scaleIdx));
+    const angle = (dirIdx / waveDirections) * Math.PI * 2;
     
     const imageData = waveCtx.createImageData(width, height);
-    const pixels = imageData.data;
-    
-    for (let i = 0; i < packet.length; i++) {
-      if (packet[i] > 0.001) {
-        const val = Math.floor(packet[i] * 255);
-        pixels[i * 4] = val;
-        pixels[i * 4 + 1] = Math.floor(val * 0.7);
-        pixels[i * 4 + 2] = Math.floor(val * 1.3);
-        pixels[i * 4 + 3] = 255;
-      }
-    }
-    
+    drawWaveOnImageData(imageData, centerX, centerY, sigma, angle, width, height, 'single');
     waveCtx.putImageData(imageData, 0, 0);
     
     waveCtx.fillStyle = '#fff';
     waveCtx.font = '14px sans-serif';
     waveCtx.fillText(`波包 ${currentWavePacket + 1} / ${waveScales * waveDirections}`, 10, 25);
   } else if (waveMode === 'energy') {
-    const barWidth = width / (waveScales * waveDirections);
+    const barWidth = Math.max(1, width / (waveScales * waveDirections));
     
     for (let scale = 0; scale < waveScales; scale++) {
       for (let dir = 0; dir < waveDirections; dir++) {
@@ -1149,16 +1161,16 @@ function drawWaveExperiment() {
     }
   }
   
-  const maxDir = Math.max(...directionCounts);
-  const minDir = Math.min(...directionCounts);
-  const uniformity = maxDir > 0 ? ((1 - (maxDir - minDir) / maxDir) * 100).toFixed(1) : '100';
+  const maxDir = directionCounts.length > 0 ? Math.max(...directionCounts) : 0;
+  const minDir = directionCounts.length > 0 ? Math.min(...directionCounts) : 0;
+  const uniformity = maxDir > 0 ? ((1 - (maxDir - minDir) / maxDir) * 100).toFixed(1) : '0.0';
   
   const wavePacketCountEl = document.getElementById('wavePacketCount');
   const highFreqEnergyEl = document.getElementById('highFreqEnergy');
   const directionUniformityEl = document.getElementById('directionUniformity');
   
   if (wavePacketCountEl) wavePacketCountEl.textContent = waveScales * waveDirections;
-  if (highFreqEnergyEl) highFreqEnergyEl.textContent = totalEnergy > 0 ? ((highFreqEnergy / totalEnergy) * 100).toFixed(1) + '%' : '0%';
+  if (highFreqEnergyEl) highFreqEnergyEl.textContent = totalEnergy > 0 ? ((highFreqEnergy / totalEnergy) * 100).toFixed(1) + '%' : '0.0%';
   if (directionUniformityEl) directionUniformityEl.textContent = uniformity + '%';
 }
 
