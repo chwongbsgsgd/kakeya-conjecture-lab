@@ -1,0 +1,24 @@
+{
+  "name": "kakeya-conjecture-lab",
+  "version": "1.0.0",
+  "description": "Interactive Kakeya Conjecture Lab - A visual exploration of the Kakeya conjecture in 3D",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "wrangler pages deploy dist"
+  },
+  "keywords": [
+    "kakeya",
+    "conjecture",
+    "mathematics",
+    "visualization",
+    "three.js"
+  ],
+  "author": "Kakeya Conjecture Lab",
+  "license": "MIT",
+  "devDependencies": {
+    "vite": "^5.0.0"
+  }
+}
