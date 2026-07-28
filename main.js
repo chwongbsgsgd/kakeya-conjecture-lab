@@ -526,25 +526,24 @@ function draw2dExperiment() {
   // 确保canvas有有效尺寸
   const width = canvas2d.width || 400;
   const height = canvas2d.height || 300;
-  if (width < 10 || height < 10) return; // 尺寸太小，直接返回
+  if (width < 10 || height < 10) return;
+  
   const centerX = width / 2;
   const centerY = height / 2;
   const scale = Math.min(width, height) * 0.3;
   
+  // 绘制背景
   ctx2d.fillStyle = '#1e293b';
   ctx2d.fillRect(0, 0, width, height);
   
+  // 绘制参考圆
   ctx2d.strokeStyle = '#334155';
   ctx2d.lineWidth = 1;
   ctx2d.beginPath();
   ctx2d.arc(centerX, centerY, scale, 0, Math.PI * 2);
   ctx2d.stroke();
   
-  const imageData = ctx2d.getImageData(0, 0, width, height);
-  const pixels = imageData.data;
-  
-  let drawnSegments = 0;
-  
+  // 绘制所有线段
   for (let i = 0; i < directionCount; i++) {
     const angle = (i / directionCount) * Math.PI * 2;
     
@@ -568,7 +567,7 @@ function draw2dExperiment() {
         const bundleSize = 5;
         const bundleIndex = Math.floor(i / bundleSize);
         const withinBundle = i % bundleSize;
-        const baseAngle = (bundleIndex / (directionCount / bundleSize)) * Math.PI * 2;
+        const baseAngle = (bundleIndex / Math.max(1, directionCount / bundleSize)) * Math.PI * 2;
         const spread = (withinBundle - bundleSize / 2) * 0.1;
         const bundleAngle = baseAngle + spread;
         x1 = centerX - Math.cos(bundleAngle) * scale * compression;
@@ -576,39 +575,48 @@ function draw2dExperiment() {
         x2 = centerX + Math.cos(bundleAngle) * scale * compression;
         y2 = centerY + Math.sin(bundleAngle) * scale * compression;
         break;
+      default:
+        x1 = centerX - Math.cos(angle) * scale * compression;
+        y1 = centerY - Math.sin(angle) * scale * compression;
+        x2 = centerX + Math.cos(angle) * scale * compression;
+        y2 = centerY + Math.sin(angle) * scale * compression;
     }
     
     ctx2d.beginPath();
     ctx2d.moveTo(x1, y1);
     ctx2d.lineTo(x2, y2);
-    ctx2d.strokeStyle = `rgba(99, 102, 241, ${0.8 / Math.sqrt(directionCount)})`;
+    ctx2d.strokeStyle = `rgba(99, 102, 241, 0.8)`;
     ctx2d.lineWidth = 1;
     ctx2d.stroke();
-    
-    drawnSegments++;
   }
-  
-  ctx2d.putImageData(imageData, 0, 0);
   
   updateStats(width, height);
 }
 
 function updateStats(width, height) {
-  const imageData = ctx2d.getImageData(0, 0, width, height);
-  const pixels = imageData.data;
-  let coveredPixels = 0;
+  if (width < 10 || height < 10) return;
   
-  for (let i = 3; i < pixels.length; i += 4) {
-    if (pixels[i] > 0) {
-      coveredPixels++;
+  try {
+    const imageData = ctx2d.getImageData(0, 0, width, height);
+    const pixels = imageData.data;
+    let coveredPixels = 0;
+    
+    for (let i = 3; i < pixels.length; i += 4) {
+      if (pixels[i] > 0) {
+        coveredPixels++;
+      }
     }
+    
+    const totalPixels = width * height;
+    const coverage = (coveredPixels / totalPixels * 100).toFixed(1);
+    
+    const segmentCountEl = document.getElementById('segmentCount');
+    const coverageRatioEl = document.getElementById('coverageRatio');
+    if (segmentCountEl) segmentCountEl.textContent = directionCount;
+    if (coverageRatioEl) coverageRatioEl.textContent = coverage + '%';
+  } catch (e) {
+    // 忽略 getImageData 错误
   }
-  
-  const totalPixels = width * height;
-  const coverage = (coveredPixels / totalPixels * 100).toFixed(1);
-  
-  document.getElementById('segmentCount').textContent = directionCount;
-  document.getElementById('coverageRatio').textContent = coverage + '%';
 }
 
 // δ邻域可视化
@@ -1020,17 +1028,35 @@ waveModeSelect.addEventListener('change', (e) => {
 });
 
 function createWavePacket(x, y, sigma, angle, width, height) {
+  // 优化：只在波包影响范围内计算
+  const sigmaPixels = sigma;
+  const range = Math.ceil(sigmaPixels * 3); // 3倍sigma范围
+  const cosA = Math.cos(angle);
+  const sinA = Math.sin(angle);
+  
   const packet = [];
+  const startX = Math.max(0, Math.floor(x - range));
+  const endX = Math.min(width, Math.ceil(x + range));
+  const startY = Math.max(0, Math.floor(y - range));
+  const endY = Math.min(height, Math.ceil(y + range));
+  
   for (let py = 0; py < height; py++) {
     for (let px = 0; px < width; px++) {
+      packet.push(0); // 默认值为0
+    }
+  }
+  
+  // 只在有效范围内计算
+  for (let py = startY; py < endY; py++) {
+    for (let px = startX; px < endX; px++) {
       const dx = px - x;
       const dy = py - y;
       
-      const rotX = dx * Math.cos(angle) + dy * Math.sin(angle);
-      const rotY = -dx * Math.sin(angle) + dy * Math.cos(angle);
+      const rotX = dx * cosA + dy * sinA;
+      const rotY = -dx * sinA + dy * cosA;
       
       const value = Math.exp(-(rotX * rotX) / (2 * sigma * sigma) - (rotY * rotY) / (2 * (sigma / 3) * (sigma / 3)));
-      packet.push(value);
+      packet[py * width + px] = value;
     }
   }
   return packet;
@@ -1057,30 +1083,35 @@ function drawWaveExperiment() {
     const imageData = waveCtx.createImageData(width, height);
     const pixels = imageData.data;
     
-    for (let scale = 0; scale < waveScales; scale++) {
-      const sigma = 30 / Math.pow(2, scale);
+    // 限制计算量，使用更小的sigma值
+    const effectiveScales = Math.min(waveScales, 3);
+    const effectiveDirections = Math.min(waveDirections, 8);
+    
+    for (let scale = 0; scale < effectiveScales; scale++) {
+      const sigma = Math.max(5, 30 / Math.pow(2, scale));
       
-      for (let dir = 0; dir < waveDirections; dir++) {
-        const angle = (dir / waveDirections) * Math.PI * 2;
+      for (let dir = 0; dir < effectiveDirections; dir++) {
+        const angle = (dir / effectiveDirections) * Math.PI * 2;
         const packet = createWavePacket(centerX, centerY, sigma, angle, width, height);
         
         for (let i = 0; i < packet.length; i++) {
           const energy = packet[i];
-          totalEnergy += energy;
-          if (scale >= waveScales - 2) highFreqEnergy += energy;
-          directionCounts[dir] += energy;
-          
-          pixels[i * 4] = Math.min(255, pixels[i * 4] + Math.floor(energy * 200));
-          pixels[i * 4 + 1] = Math.min(255, pixels[i * 4 + 1] + Math.floor(energy * 150));
-          pixels[i * 4 + 2] = Math.min(255, pixels[i * 4 + 2] + Math.floor(energy * 255));
+          if (energy > 0.001) { // 只处理有能量的像素
+            totalEnergy += energy;
+            if (scale >= effectiveScales - 2) highFreqEnergy += energy;
+            directionCounts[dir] += energy;
+            
+            pixels[i * 4] = Math.min(255, pixels[i * 4] + Math.floor(energy * 200));
+            pixels[i * 4 + 1] = Math.min(255, pixels[i * 4 + 1] + Math.floor(energy * 150));
+            pixels[i * 4 + 2] = Math.min(255, pixels[i * 4 + 2] + Math.floor(energy * 255));
+          }
         }
       }
     }
     
     waveCtx.putImageData(imageData, 0, 0);
   } else if (waveMode === 'individual') {
-    // 使用 requestAnimationFrame 代替 setTimeout，避免无限递归
-    const sigma = 30 / Math.pow(2, Math.floor(currentWavePacket / waveDirections) % waveScales);
+    const sigma = Math.max(5, 30 / Math.pow(2, Math.floor(currentWavePacket / waveDirections) % Math.min(waveScales, 3)));
     const angle = ((currentWavePacket % waveDirections) / waveDirections) * Math.PI * 2;
     const packet = createWavePacket(centerX, centerY, sigma, angle, width, height);
     
@@ -1088,11 +1119,13 @@ function drawWaveExperiment() {
     const pixels = imageData.data;
     
     for (let i = 0; i < packet.length; i++) {
-      const val = Math.floor(packet[i] * 255);
-      pixels[i * 4] = val;
-      pixels[i * 4 + 1] = Math.floor(val * 0.7);
-      pixels[i * 4 + 2] = Math.floor(val * 1.3);
-      pixels[i * 4 + 3] = 255;
+      if (packet[i] > 0.001) {
+        const val = Math.floor(packet[i] * 255);
+        pixels[i * 4] = val;
+        pixels[i * 4 + 1] = Math.floor(val * 0.7);
+        pixels[i * 4 + 2] = Math.floor(val * 1.3);
+        pixels[i * 4 + 3] = 255;
+      }
     }
     
     waveCtx.putImageData(imageData, 0, 0);
@@ -1111,7 +1144,7 @@ function drawWaveExperiment() {
         
         const hue = (dir / waveDirections) * 360;
         waveCtx.fillStyle = `hsl(${hue}, 70%, ${40 + scale * 10}%)`;
-        waveCtx.fillRect(index * barWidth, height - barHeight, barWidth - 2, barHeight);
+        waveCtx.fillRect(index * barWidth, height - barHeight, Math.max(1, barWidth - 2), barHeight);
       }
     }
   }
@@ -1120,9 +1153,13 @@ function drawWaveExperiment() {
   const minDir = Math.min(...directionCounts);
   const uniformity = maxDir > 0 ? ((1 - (maxDir - minDir) / maxDir) * 100).toFixed(1) : '100';
   
-  document.getElementById('wavePacketCount').textContent = waveScales * waveDirections;
-  document.getElementById('highFreqEnergy').textContent = totalEnergy > 0 ? ((highFreqEnergy / totalEnergy) * 100).toFixed(1) + '%' : '0%';
-  document.getElementById('directionUniformity').textContent = uniformity + '%';
+  const wavePacketCountEl = document.getElementById('wavePacketCount');
+  const highFreqEnergyEl = document.getElementById('highFreqEnergy');
+  const directionUniformityEl = document.getElementById('directionUniformity');
+  
+  if (wavePacketCountEl) wavePacketCountEl.textContent = waveScales * waveDirections;
+  if (highFreqEnergyEl) highFreqEnergyEl.textContent = totalEnergy > 0 ? ((highFreqEnergy / totalEnergy) * 100).toFixed(1) + '%' : '0%';
+  if (directionUniformityEl) directionUniformityEl.textContent = uniformity + '%';
 }
 
 // 波包动画控制
