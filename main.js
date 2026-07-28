@@ -28,6 +28,11 @@ function navigateTo(sectionId) {
     btn.classList.toggle('active', btn.dataset.section === sectionId);
   });
   
+  // 离开波包分解时停止动画
+  if (sectionId !== 'wave-packet') {
+    stopWaveAnimation();
+  }
+  
   // 延迟初始化或重新绘制对应section的canvas
   setTimeout(() => {
     switch(sectionId) {
@@ -80,6 +85,8 @@ function navigateTo(sectionId) {
           waveCanvas.height = waveCanvas.offsetHeight || 300;
           drawWaveExperiment();
         }
+        // 启动波包动画
+        startWaveAnimation();
         break;
     }
   }, 100);
@@ -87,6 +94,7 @@ function navigateTo(sectionId) {
 
 // 三维可视化
 let scene, camera, renderer, tubes = [];
+let directionalLight, pointLight;
 let isRotating = true;
 let currentPattern = 'star';
 let numTubes = 320;
@@ -109,11 +117,11 @@ function initThree() {
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
   scene.add(ambientLight);
 
-  const directionalLight = new THREE.DirectionalLight(0x6366f1, 0.8);
+  directionalLight = new THREE.DirectionalLight(0x6366f1, 0.8);
   directionalLight.position.set(5, 5, 5);
   scene.add(directionalLight);
 
-  const pointLight = new THREE.PointLight(0x06b6d4, 0.5);
+  pointLight = new THREE.PointLight(0x06b6d4, 0.5);
   pointLight.position.set(-5, -5, 5);
   scene.add(pointLight);
 
@@ -150,23 +158,97 @@ function initThree() {
     isDragging = false;
   });
 
+  container.addEventListener('mouseleave', () => {
+    isDragging = false;
+  });
+
   container.addEventListener('wheel', (e) => {
     e.preventDefault();
     camera.position.z = Math.max(2, Math.min(10, camera.position.z + e.deltaY * 0.005));
   });
+
+  // 触摸支持
+  container.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+      isDragging = true;
+      previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+  }, { passive: true });
+
+  container.addEventListener('touchmove', (e) => {
+    if (!isDragging || e.touches.length !== 1) return;
+    const deltaMove = {
+      x: e.touches[0].clientX - previousMousePosition.x,
+      y: e.touches[0].clientY - previousMousePosition.y
+    };
+    scene.rotation.y += deltaMove.x * 0.005;
+    scene.rotation.x += deltaMove.y * 0.005;
+    previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+  }, { passive: true });
+
+  container.addEventListener('touchend', () => {
+    isDragging = false;
+  });
+
+  // 双指缩放
+  let initialPinchDistance = null;
+  container.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      initialPinchDistance = Math.sqrt(dx * dx + dy * dy);
+    }
+  }, { passive: true });
+
+  container.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2 && initialPinchDistance) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const currentDistance = Math.sqrt(dx * dx + dy * dy);
+      const scaleFactor = initialPinchDistance / currentDistance;
+      camera.position.z = Math.max(2, Math.min(10, camera.position.z * scaleFactor));
+      initialPinchDistance = currentDistance;
+    }
+  }, { passive: true });
+
+  container.addEventListener('touchend', (e) => {
+    if (e.touches.length < 2) {
+      initialPinchDistance = null;
+    }
+  });
 }
 
+// 模式颜色映射
+const patternColors = {
+  star: 0x6366f1,        // 紫色 - 中心星束
+  scattered: 0x06b6d4,   // 青色 - 分散排列
+  sticky: 0xf59e0b,      // 琥珀色 - 多尺度黏连
+  grain: 0xec4899        // 粉色 - 木纹颗粒
+};
+
 function createTubes() {
-  // 清除旧的管
+  // 清除旧的管和粒子
   tubes.forEach(tube => scene.remove(tube));
   tubes = [];
+  
+  // 清除粒子
+  if (particles) {
+    scene.remove(particles);
+    particles.geometry.dispose();
+    particles.material.dispose();
+  }
 
   const geometry = new THREE.CylinderGeometry(tubeRadius, tubeRadius, 1.5, 8);
+  
+  // 根据模式选择颜色
+  const color = patternColors[currentPattern] || 0x6366f1;
   const material = new THREE.MeshPhongMaterial({
-    color: 0x6366f1,
+    color: color,
     transparent: true,
-    opacity: 0.6,
-    side: THREE.DoubleSide
+    opacity: 0.7,
+    side: THREE.DoubleSide,
+    shininess: 100,
+    specular: new THREE.Color(0xffffff)
   });
 
   switch (currentPattern) {
@@ -183,6 +265,36 @@ function createTubes() {
       createGrainPattern(geometry, material);
       break;
   }
+  
+  // 添加粒子背景效果
+  addParticles();
+}
+
+// 粒子系统
+let particles;
+function addParticles() {
+  const particleCount = 500;
+  const positions = new Float32Array(particleCount * 3);
+  
+  for (let i = 0; i < particleCount; i++) {
+    positions[i * 3] = (Math.random() - 0.5) * 8;
+    positions[i * 3 + 1] = (Math.random() - 0.5) * 8;
+    positions[i * 3 + 2] = (Math.random() - 0.5) * 8;
+  }
+  
+  const particleGeometry = new THREE.BufferGeometry();
+  particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  
+  const particleMaterial = new THREE.PointsMaterial({
+    color: 0xffffff,
+    size: 0.02,
+    transparent: true,
+    opacity: 0.3,
+    blending: THREE.AdditiveBlending
+  });
+  
+  particles = new THREE.Points(particleGeometry, particleMaterial);
+  scene.add(particles);
 }
 
 function createStarPattern(geometry, material) {
@@ -303,6 +415,18 @@ function animate() {
   
   if (isRotating) {
     scene.rotation.y += 0.003;
+    // 粒子旋转
+    if (particles) {
+      particles.rotation.y -= 0.001;
+      particles.rotation.x += 0.0005;
+    }
+  }
+  
+  // 动态光源
+  if (directionalLight) {
+    const time = Date.now() * 0.001;
+    directionalLight.position.x = Math.sin(time * 0.3) * 5;
+    directionalLight.position.z = Math.cos(time * 0.3) * 5;
   }
   
   renderer.render(scene, camera);
@@ -955,7 +1079,8 @@ function drawWaveExperiment() {
     
     waveCtx.putImageData(imageData, 0, 0);
   } else if (waveMode === 'individual') {
-    const sigma = 30 / Math.pow(2, currentWavePacket % waveScales);
+    // 使用 requestAnimationFrame 代替 setTimeout，避免无限递归
+    const sigma = 30 / Math.pow(2, Math.floor(currentWavePacket / waveDirections) % waveScales);
     const angle = ((currentWavePacket % waveDirections) / waveDirections) * Math.PI * 2;
     const packet = createWavePacket(centerX, centerY, sigma, angle, width, height);
     
@@ -975,11 +1100,6 @@ function drawWaveExperiment() {
     waveCtx.fillStyle = '#fff';
     waveCtx.font = '14px sans-serif';
     waveCtx.fillText(`波包 ${currentWavePacket + 1} / ${waveScales * waveDirections}`, 10, 25);
-    
-    setTimeout(() => {
-      currentWavePacket = (currentWavePacket + 1) % (waveScales * waveDirections);
-      if (waveMode === 'individual') drawWaveExperiment();
-    }, 500);
   } else if (waveMode === 'energy') {
     const barWidth = width / (waveScales * waveDirections);
     
@@ -1003,6 +1123,33 @@ function drawWaveExperiment() {
   document.getElementById('wavePacketCount').textContent = waveScales * waveDirections;
   document.getElementById('highFreqEnergy').textContent = totalEnergy > 0 ? ((highFreqEnergy / totalEnergy) * 100).toFixed(1) + '%' : '0%';
   document.getElementById('directionUniformity').textContent = uniformity + '%';
+}
+
+// 波包动画控制
+let waveAnimationId = null;
+let lastWaveUpdateTime = 0;
+const WAVE_UPDATE_INTERVAL = 400; // ms
+
+function startWaveAnimation() {
+  stopWaveAnimation();
+  const animate = (currentTime) => {
+    if (waveMode === 'individual' && waveCanvas && waveCanvas.width > 0) {
+      if (currentTime - lastWaveUpdateTime > WAVE_UPDATE_INTERVAL) {
+        currentWavePacket = (currentWavePacket + 1) % (waveScales * waveDirections);
+        drawWaveExperiment();
+        lastWaveUpdateTime = currentTime;
+      }
+    }
+    waveAnimationId = requestAnimationFrame(animate);
+  };
+  waveAnimationId = requestAnimationFrame(animate);
+}
+
+function stopWaveAnimation() {
+  if (waveAnimationId) {
+    cancelAnimationFrame(waveAnimationId);
+    waveAnimationId = null;
+  }
 }
 
 // 初始化

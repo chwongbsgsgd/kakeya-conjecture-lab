@@ -120,15 +120,39 @@ main {
   display: none;
   padding: 4rem 2rem;
   min-height: calc(100vh - 4.5rem);
+  animation: fadeIn 0.4s ease-out;
 }
 
 .section.active {
   display: block;
 }
 
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .section-header {
   text-align: center;
   margin-bottom: 3rem;
+  animation: slideDown 0.5s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .section-header h2 {
@@ -205,6 +229,12 @@ main {
   border-radius: 1rem;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
+  position: relative;
+  overflow: hidden;
+}
+
+#three-container canvas {
+  display: block;
 }
 
 .three-controls {
@@ -217,6 +247,8 @@ main {
   border-radius: 0 0 1rem 1rem;
   padding: 1rem;
   border-top: 1px solid var(--border-color);
+  pointer-events: auto;
+  z-index: 10;
 }
 
 .pattern-buttons {
@@ -841,4 +873,112 @@ footer {
   #three-container {
     height: 300px;
   }
+  
+  .nav-btn {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.75rem;
+  }
+  
+  .pattern-buttons {
+    gap: 0.25rem;
+  }
+  
+  .pattern-btn {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.75rem;
+  }
+  
+  .param-group {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  
+  input[type="range"] {
+    width: 100%;
+  }
+}
+
+/* 触摸优化 */
+@media (hover: none) {
+  .nav-btn:hover {
+    background: transparent;
+    color: var(--text-secondary);
+    border-color: var(--border-color);
+  }
+  
+  .nav-btn:active,
+  .nav-btn.active {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+  }
+  
+  .pattern-btn:hover {
+    background: transparent;
+  }
+  
+  .pattern-btn:active,
+  .pattern-btn.active {
+    background: var(--primary-color);
+    color: white;
+  }
+}
+
+/* 滚动条美化 */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-dark);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-color);
+}
+
+/* 选中文字颜色 */
+::selection {
+  background: var(--primary-color);
+  color: white;
+}
+
+/* 输入框样式 */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: var(--border-color);
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--primary-color);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  background: var(--primary-color);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
 }
