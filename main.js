@@ -18,12 +18,71 @@ mobileMenuBtn.addEventListener('click', () => {
   mobileMenu.classList.toggle('active');
 });
 
+// 追踪已初始化的canvas
+const initializedCanvases = new Set();
+
 function navigateTo(sectionId) {
   sections.forEach(section => section.classList.remove('active'));
   document.getElementById(sectionId).classList.add('active');
   navBtns.forEach(btn => {
     btn.classList.toggle('active', btn.dataset.section === sectionId);
   });
+  
+  // 延迟初始化或重新绘制对应section的canvas
+  setTimeout(() => {
+    switch(sectionId) {
+      case 'experiment-2d':
+        if (!initializedCanvases.has('canvas2d')) {
+          initCanvas2d();
+          initializedCanvases.add('canvas2d');
+        } else if (canvas2d) {
+          canvas2d.width = canvas2d.offsetWidth || 400;
+          canvas2d.height = canvas2d.offsetHeight || 300;
+          draw2dExperiment();
+        }
+        break;
+      case 'definition':
+        if (!initializedCanvases.has('deltaCanvas')) {
+          initDeltaCanvas();
+          initializedCanvases.add('deltaCanvas');
+        } else if (deltaCanvas) {
+          deltaCanvas.width = deltaCanvas.offsetWidth || 400;
+          deltaCanvas.height = deltaCanvas.offsetHeight || 300;
+          drawDeltaExperiment();
+        }
+        break;
+      case 'dimension':
+        if (!initializedCanvases.has('dimensionCanvas')) {
+          initDimensionCanvas();
+          initializedCanvases.add('dimensionCanvas');
+        } else if (dimensionCanvas) {
+          dimensionCanvas.width = dimensionCanvas.offsetWidth || 400;
+          dimensionCanvas.height = dimensionCanvas.offsetHeight || 300;
+          drawDimensionExperiment();
+        }
+        break;
+      case 'multi-scale':
+        if (!initializedCanvases.has('scaleCanvas')) {
+          initScaleCanvas();
+          initializedCanvases.add('scaleCanvas');
+        } else if (scaleCanvas) {
+          scaleCanvas.width = scaleCanvas.offsetWidth || 400;
+          scaleCanvas.height = scaleCanvas.offsetHeight || 300;
+          drawScaleExperiment();
+        }
+        break;
+      case 'wave-packet':
+        if (!initializedCanvases.has('waveCanvas')) {
+          initWaveCanvas();
+          initializedCanvases.add('waveCanvas');
+        } else if (waveCanvas) {
+          waveCanvas.width = waveCanvas.offsetWidth || 400;
+          waveCanvas.height = waveCanvas.offsetHeight || 300;
+          drawWaveExperiment();
+        }
+        break;
+    }
+  }, 100);
 }
 
 // 三维可视化
@@ -298,14 +357,19 @@ function initCanvas2d() {
   if (!canvas2d) return;
   
   ctx2d = canvas2d.getContext('2d');
-  canvas2d.width = canvas2d.offsetWidth;
-  canvas2d.height = canvas2d.offsetHeight;
+  // 使用 offsetWidth，如果为 0 则使用默认值
+  const w = canvas2d.offsetWidth || 400;
+  const h = canvas2d.offsetHeight || 300;
+  canvas2d.width = w;
+  canvas2d.height = h;
   
   draw2dExperiment();
   
   window.addEventListener('resize', () => {
-    canvas2d.width = canvas2d.offsetWidth;
-    canvas2d.height = canvas2d.offsetHeight;
+    const w = canvas2d.offsetWidth || 400;
+    const h = canvas2d.offsetHeight || 300;
+    canvas2d.width = w;
+    canvas2d.height = h;
     draw2dExperiment();
   });
 }
@@ -430,14 +494,18 @@ function initDeltaCanvas() {
   if (!deltaCanvas) return;
   
   deltaCtx = deltaCanvas.getContext('2d');
-  deltaCanvas.width = deltaCanvas.offsetWidth;
-  deltaCanvas.height = deltaCanvas.offsetHeight;
+  const w = deltaCanvas.offsetWidth || 400;
+  const h = deltaCanvas.offsetHeight || 300;
+  deltaCanvas.width = w;
+  deltaCanvas.height = h;
   
   drawDeltaExperiment();
   
   window.addEventListener('resize', () => {
-    deltaCanvas.width = deltaCanvas.offsetWidth;
-    deltaCanvas.height = deltaCanvas.offsetHeight;
+    const w = deltaCanvas.offsetWidth || 400;
+    const h = deltaCanvas.offsetHeight || 300;
+    deltaCanvas.width = w;
+    deltaCanvas.height = h;
     drawDeltaExperiment();
   });
 }
@@ -525,14 +593,18 @@ function initDimensionCanvas() {
   if (!dimensionCanvas) return;
   
   dimensionCtx = dimensionCanvas.getContext('2d');
-  dimensionCanvas.width = dimensionCanvas.offsetWidth;
-  dimensionCanvas.height = dimensionCanvas.offsetHeight;
+  const w = dimensionCanvas.offsetWidth || 400;
+  const h = dimensionCanvas.offsetHeight || 300;
+  dimensionCanvas.width = w;
+  dimensionCanvas.height = h;
   
   drawDimensionExperiment();
   
   window.addEventListener('resize', () => {
-    dimensionCanvas.width = dimensionCanvas.offsetWidth;
-    dimensionCanvas.height = dimensionCanvas.offsetHeight;
+    const w = dimensionCanvas.offsetWidth || 400;
+    const h = dimensionCanvas.offsetHeight || 300;
+    dimensionCanvas.width = w;
+    dimensionCanvas.height = h;
     drawDimensionExperiment();
   });
 }
@@ -658,14 +730,18 @@ function initScaleCanvas() {
   if (!scaleCanvas) return;
   
   scaleCtx = scaleCanvas.getContext('2d');
-  scaleCanvas.width = scaleCanvas.offsetWidth;
-  scaleCanvas.height = scaleCanvas.offsetHeight;
+  const w = scaleCanvas.offsetWidth || 400;
+  const h = scaleCanvas.offsetHeight || 300;
+  scaleCanvas.width = w;
+  scaleCanvas.height = h;
   
   drawScaleExperiment();
   
   window.addEventListener('resize', () => {
-    scaleCanvas.width = scaleCanvas.offsetWidth;
-    scaleCanvas.height = scaleCanvas.offsetHeight;
+    const w = scaleCanvas.offsetWidth || 400;
+    const h = scaleCanvas.offsetHeight || 300;
+    scaleCanvas.width = w;
+    scaleCanvas.height = h;
     drawScaleExperiment();
   });
 }
@@ -775,14 +851,18 @@ function initWaveCanvas() {
   if (!waveCanvas) return;
   
   waveCtx = waveCanvas.getContext('2d');
-  waveCanvas.width = waveCanvas.offsetWidth;
-  waveCanvas.height = waveCanvas.offsetHeight;
+  const w = waveCanvas.offsetWidth || 400;
+  const h = waveCanvas.offsetHeight || 300;
+  waveCanvas.width = w;
+  waveCanvas.height = h;
   
   drawWaveExperiment();
   
   window.addEventListener('resize', () => {
-    waveCanvas.width = waveCanvas.offsetWidth;
-    waveCanvas.height = waveCanvas.offsetHeight;
+    const w = waveCanvas.offsetWidth || 400;
+    const h = waveCanvas.offsetHeight || 300;
+    waveCanvas.width = w;
+    waveCanvas.height = h;
     drawWaveExperiment();
   });
 }
@@ -921,10 +1001,7 @@ function drawWaveExperiment() {
 
 // 初始化
 window.addEventListener('DOMContentLoaded', () => {
+  // 只初始化Three.js（intro section是可见的）
   initThree();
-  initCanvas2d();
-  initDeltaCanvas();
-  initDimensionCanvas();
-  initScaleCanvas();
-  initWaveCanvas();
+  initializedCanvases.add('three');
 });
