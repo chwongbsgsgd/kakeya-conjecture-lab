@@ -399,8 +399,10 @@ modeSelect.addEventListener('change', (e) => {
 function draw2dExperiment() {
   if (!ctx2d) return;
   
-  const width = canvas2d.width;
-  const height = canvas2d.height;
+  // 确保canvas有有效尺寸
+  const width = canvas2d.width || 400;
+  const height = canvas2d.height || 300;
+  if (width < 10 || height < 10) return; // 尺寸太小，直接返回
   const centerX = width / 2;
   const centerY = height / 2;
   const scale = Math.min(width, height) * 0.3;
@@ -521,8 +523,9 @@ deltaSlider.addEventListener('input', (e) => {
 function drawDeltaExperiment() {
   if (!deltaCtx) return;
   
-  const width = deltaCanvas.width;
-  const height = deltaCanvas.height;
+  const width = deltaCanvas.width || 400;
+  const height = deltaCanvas.height || 300;
+  if (width < 10 || height < 10) return;
   const centerX = width / 2;
   const centerY = height / 2;
   const scale = Math.min(width, height) * 0.3;
@@ -689,8 +692,9 @@ function estimateKakeyaDimension(data, width, height) {
 function drawDimensionExperiment() {
   if (!dimensionCtx) return;
   
-  const width = dimensionCanvas.width;
-  const height = dimensionCanvas.height;
+  const width = dimensionCanvas.width || 400;
+  const height = dimensionCanvas.height || 300;
+  if (width < 10 || height < 10) return;
   
   dimensionCtx.fillStyle = '#1e293b';
   dimensionCtx.fillRect(0, 0, width, height);
@@ -772,8 +776,9 @@ samplingSelect.addEventListener('change', (e) => {
 function drawScaleExperiment() {
   if (!scaleCtx) return;
   
-  const width = scaleCanvas.width;
-  const height = scaleCanvas.height;
+  const width = scaleCanvas.width || 400;
+  const height = scaleCanvas.height || 300;
+  if (width < 10 || height < 10) return;
   
   scaleCtx.fillStyle = '#1e293b';
   scaleCtx.fillRect(0, 0, width, height);
@@ -910,8 +915,9 @@ function createWavePacket(x, y, sigma, angle, width, height) {
 function drawWaveExperiment() {
   if (!waveCtx) return;
   
-  const width = waveCanvas.width;
-  const height = waveCanvas.height;
+  const width = waveCanvas.width || 400;
+  const height = waveCanvas.height || 300;
+  if (width < 10 || height < 10) return;
   
   waveCtx.fillStyle = '#1e293b';
   waveCtx.fillRect(0, 0, width, height);
